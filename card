@@ -1,0 +1,18 @@
+class Card:
+    def __init__(self, val, suit, faceup=True):
+        self.val = val
+        self.suit = suit
+        self.faceup = faceup
+
+    def __str__(self):
+        if self.faceup:
+            return f"{self.val}{self.suit}"
+        else:
+            return "XX"  # not being used until hand analyser works
+
+    def __getitem__(self, val):  # this fixed card display issues. Not sure what it does
+        return self.val[val]
+
+    #def show(self): #  this did something at some point. Now seems redundant
+    #    return f"{self.val}{self.suit}"
+    #    print (f"{self.val}{self.suit}")
