@@ -1,0 +1,31 @@
+class Deck:
+    def __init__(self):
+        self.cards = []
+        self.build()
+
+    def build(self):
+        for s in sList:
+            for v in vDict:
+                self.cards.append(Card(v, s))
+
+    def show(self):
+        for c in self.cards:
+            c.show()
+
+    def shuffle(self):
+        for i in range(len(self.cards) - 1, 0, -1):
+            shuf = random.randint(0, i)
+            self.cards[i], self.cards[shuf] = self.cards[shuf], self.cards[i]
+
+    def draw(self):
+        return self.cards.pop()
+
+    def draw_custom(self, Card, play_deck, ref_deck):
+        for tc in target_cards:
+            if tc.val not in vDict or tc.suit not in sList:
+                print(f"{tc} is not a valid Card")
+                return False
+            else:
+                for c in play_deck.cards:
+                    if tc.suit == c.suit and tc.val == c.val:
+                        play_deck.cards.remove(c)
