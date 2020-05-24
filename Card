@@ -10,7 +10,8 @@ class Card:
         else:
             return "XX"  # not being used until hand analyser works
 
-    def __getitem__(self, val):  # this fixed card display issues. Not sure what it does
+    # this fixed card display issues. Not sure what it does
+    def __getitem__(self, val):
         return self.val[val]
 
     #def show(self): #  this did something at some point. Now seems redundant
