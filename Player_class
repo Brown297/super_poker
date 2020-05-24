@@ -1,0 +1,372 @@
+import itertools
+from Card_class import Card
+from Deck_class import Deck, nDict, vDict, sList
+
+class Player:
+    def __init__(self, name, deck, table, mind):
+        self.name = name
+        self.hand = []
+        self.Deck = deck
+        self.mind = mind
+        self.handscore = 0
+        self.availCards = self.hand + table.cards
+
+
+    def draw_hand(self):
+        self.hand.append(self.Deck.draw())
+        self.hand.append(self.Deck.draw())
+        self.availCards.extend(self.hand)
+
+    def show_hand(self):
+        hand_list = " ".join(map(str, self.hand))
+        print(f"{self.name} - {hand_list}")
+
+    def hand_analyser(self):
+
+        def is_straightflush(self):
+            pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)  # Sort 7 available cards
+
+            for five_cards in itertools.combinations(pSort, 5):  # find every 5 card combo
+                five_vals = sorted([Card.val for Card in five_cards],
+                                   key=lambda x: vDict[x[0]], reverse=True)  # get value for each card and sort list
+                five_valcount = set(five_vals)
+
+                five_suits = [Card.suit for Card in five_cards]
+                five_suitcount = set(five_suits)
+                five_flush = [i for i in five_suitcount if five_suits.count(i) == 5]
+
+                high_val = vDict["".join(map(str, five_cards))[0]]
+                low_val = vDict["".join(map(str, five_cards))[8]]
+
+                if len(five_valcount) == 5 and high_val-low_val == 4 and len(five_flush) == 1:  # need 5 different value, with range 4, in same suit
+                    fc_print = " ".join(map(str, five_cards))
+
+                    # Score hand
+                    self.handscore = 90000000000 + \
+                                     vDict["".join(map(str, five_cards))[0]]
+
+                    # Declare hand
+                    self.p_hand_cards = f"{fc_print}"
+                    self.p_hand_desc = f"{nDict[five_vals[0]]} high Straight Flush"
+
+                elif len(five_flush) == 1 and \
+                     vDict["".join(map(str, five_cards))[0]] == 14 and \
+                     vDict["".join(map(str, five_cards))[2]] == 5 and \
+                     vDict["".join(map(str, five_cards))[4]] == 4 and \
+                     vDict["".join(map(str, five_cards))[6]] == 3 and \
+                     vDict["".join(map(str, five_cards))[8]] == 2:  # special case for A-5 straight
+
+                    # Score hand
+                    self.handscore = 90000000000 + \
+                                     vDict["".join(map(str, five_cards))[2]]
+
+                    # Declare hand
+                    self.p_hand_cards = f"{five_cards[1]} {five_cards[2]} {five_cards[3]} {five_cards[4]} {five_cards[0]}"
+                    self.p_hand_desc = f"{nDict[five_vals[1]]} high Straight Flush"
+
+                else:
+                    continue
+
+        def is_quads(self):
+            vals = [Card.val for Card in self.availCards]  # Check values of cards in hand + table
+            valcount = set(vals)
+            Quad = [i for i in valcount if vals.count(i) == 4]  # Check if any quads exist
+
+            if len(Quad) != 1:
+                return False
+
+            else:
+                # sort 7 available cards by rank
+                pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+
+                quadCards = []
+                for c in pSort:
+                    if c.val == Quad[0]:
+                        quadCards.append(c)
+                        quadcards_disp = " ".join(map(str, quadCards))
+
+                nonquadCards = []
+                for c in pSort:
+                    if c.val != Quad[0]:
+                        nonquadCards.append(c)
+                        kicker = " ".join(map(str, nonquadCards[:1]))
+
+                # Score hand
+                self.handscore = 80000000000 + \
+                                 vDict["".join(map(str, quadCards))[0]] * 100 + \
+                                 vDict["".join(map(str, kicker))[0]]
+
+                # Declare hand
+                self.p_hand_cards = f"{quadcards_disp} {kicker}"
+                self.p_hand_desc = f"Quad {nDict[Quad[0]]}'s"
+
+        def is_fullhouse(self):
+            vals = [Card.val for Card in self.availCards]  # Check values of cards in hand + table
+            valcount = set(vals)
+            pairs = [i for i in valcount if vals.count(i) == 2]  # Check if any pairs exist
+            trips = [i for i in valcount if vals.count(i) == 3]  # Check if any trips exist
+
+            if len(trips) == 0 or (len(trips) == 1 and len(pairs) == 0):
+                return False
+
+            else:  # sort 7 available cards by rank
+                pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+                pairs = sorted(pairs, key=lambda x: vDict[x[0]], reverse=True)
+                trips = sorted(trips, key=lambda x: vDict[x[0]], reverse=True)
+
+                highTrip = []
+                for c in pSort:
+                    if c.val == trips[0]:
+                        highTrip.append(c)
+                        hightrip_disp = " ".join(map(str, highTrip))
+
+                fillCards = []
+                if len(trips) == 2:  # 2 trips
+                    for c in pSort:
+                        if c.val == trips[1]:
+                            fillCards.append(c)
+                            fillcards_disp = " ".join(map(str, fillCards[:-1]))
+
+                    # Score hand
+                    self.handscore = 70000000000 + \
+                                     vDict["".join(map(str, highTrip))[0]] * 100 + \
+                                     vDict["".join(map(str, fillCards))[0]]
+
+                    # Declare hand
+                    self.p_hand_cards = f"{hightrip_disp} {fillcards_disp}"
+                    self.p_hand_desc = f"Full House {nDict[trips[0]]}'s full of {nDict[trips[1]]}'s"
+
+                else:  # 1 trip + pair
+                    for c in pSort:
+                        if c.val == pairs[0]:
+                            fillCards.append(c)
+                            fillcards_disp = " ".join(map(str, fillCards))
+
+                    # Score hand
+                    self.handscore = 70000000000 + \
+                                     vDict["".join(map(str, highTrip))[0]] * 100 + \
+                                     vDict["".join(map(str, fillCards))[0]]
+
+                    # Declare hand
+                    self.p_hand_cards = f"{hightrip_disp} {fillcards_disp}"
+                    self.p_hand_desc = f"Full House {nDict[trips[0]]}'s full of {nDict[pairs[0]]}'s"
+
+        def is_flush(self):
+            suits = [Card.suit for Card in self.availCards]  # Check suits of cards in hand + table
+            suitcount = set(suits)
+            flush = [i for i in suitcount if suits.count(i) >= 5]  # Check if at least 5 cards share a suit
+
+            if len(flush) != 1:
+                return False
+
+            else:
+                # sort 7 available cards by rank
+                pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+
+                flush_cards = []
+                for c in pSort:
+                    if c.suit == flush[0]:
+                        flush_cards.append(c)
+                        flush_disp = " ".join(map(str, flush_cards[:5]))
+
+                # Score hand
+                self.handscore = 60000000000 + \
+                                 vDict["".join(map(str, flush_cards))[0]] * 100000000 + \
+                                 vDict["".join(map(str, flush_cards))[2]] * 1000000 + \
+                                 vDict["".join(map(str, flush_cards))[4]] * 10000 + \
+                                 vDict["".join(map(str, flush_cards))[6]] * 100 + \
+                                 vDict["".join(map(str, flush_cards))[8]]
+
+                # Declare hand
+                self.p_hand_cards = f"{flush_disp}"
+                self.p_hand_desc = f"{nDict[flush_cards[0].val]} high Flush"
+
+        def is_straight(self):
+            pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)  # Sort 7 available cards
+
+            for five_cards in itertools.combinations(pSort, 5):  # find every 5 card combo
+                five_vals = sorted([Card.val for Card in five_cards],
+                                   key=lambda x: vDict[x[0]], reverse=True)  # get value for each card and sort list
+                five_valcount = set(five_vals)
+
+                high_val = vDict["".join(map(str, five_cards))[0]]
+                low_val = vDict["".join(map(str, five_cards))[8]]
+
+                if len(five_valcount) == 5 and high_val-low_val == 4:  # 5 different cards with range 4 = straight
+                    fc_print = " ".join(map(str, five_cards))
+
+                    # Score hand
+                    self.handscore = 50000000000 + \
+                                     vDict["".join(map(str, five_cards))[0]]
+
+                    # Declare hand
+                    self.p_hand_cards = f"{fc_print}"
+                    self.p_hand_desc = f"{nDict[five_vals[0]]} high Straight"
+
+                elif vDict["".join(map(str, five_cards))[0]] == 14 and \
+                     vDict["".join(map(str, five_cards))[2]] == 5 and \
+                     vDict["".join(map(str, five_cards))[4]] == 4 and \
+                     vDict["".join(map(str, five_cards))[6]] == 3 and \
+                     vDict["".join(map(str, five_cards))[8]] == 2:  # special case for A-5 straight
+
+                    # Score hand
+                    self.handscore = 50000000000 + \
+                                     vDict["".join(map(str, five_cards))[2]]
+
+
+                    # Declare hand
+                    self.p_hand_cards = f"{five_cards[1]} {five_cards[2]} {five_cards[3]} {five_cards[4]} {five_cards[0]}"
+                    self.p_hand_desc = f"{nDict[five_vals[1]]} high Straight"
+
+                else:
+                    continue
+
+        def is_trips(self):
+            vals = [Card.val for Card in self.availCards]  # Check values of cards in hand + table
+            valcount = set(vals)
+            Trip = [i for i in valcount if vals.count(i) == 3]  # Check if any trips exist
+
+            if len(Trip) != 1:
+                return False
+
+            else:
+                # sort 7 available cards by rank
+                pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+
+                tripCards = []
+                for c in pSort:
+                    if c.val == Trip[0]:
+                        tripCards.append(c)
+                        trip_disp = " ".join(map(str, tripCards))
+
+                nontripCards = []
+                for c in pSort:
+                    if c.val != Trip[0]:
+                        nontripCards.append(c)
+                        nontrip_disp = " ".join(map(str, nontripCards[:-2]))
+
+                # Score hand
+                self.handscore = 40000000000 + \
+                                 vDict["".join(map(str, tripCards))[0]] * 10000 + \
+                                 vDict["".join(map(str, nontripCards))[0]] * 100 + \
+                                 vDict["".join(map(str, nontripCards))[2]]
+
+                # Declare hand
+                self.p_hand_cards = f"{trip_disp} {nontrip_disp}"
+                self.p_hand_desc = f"Trip {nDict[Trip[0]]}'s"
+
+        def is_twopair(self):
+            vals = [Card.val for Card in self.availCards]  # Check values of cards in hand + table
+            valcount = set(vals)
+            pairs = [i for i in valcount if vals.count(i) == 2]  # Check if any pairs exist
+            if len(pairs) < 2:
+                return False
+
+            else:
+                # sort 7 available cards by rank
+                pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+                pairs = sorted(pairs, key=lambda x: vDict[x[0]], reverse=True)
+
+                pair1 = []
+                for c in pSort:
+                    if c.val == pairs[0]:
+                        pair1.append(c)
+                        pair1_disp = " ".join(map(str, pair1))
+
+                pair2 = []
+                for c in pSort:
+                    if c.val == pairs[1]:
+                        pair2.append(c)
+                        pair2_disp = " ".join(map(str, pair2))
+
+                nonpairCards = []
+                for c in pSort:
+                    if c.val != pairs[0] and c.val != pairs[1]:
+                        nonpairCards.append(c)
+                        nonpair_disp = " ".join(map(str, nonpairCards[:-2]))
+
+                # Score hand
+                self.handscore = 30000000000 + \
+                                 vDict["".join(map(str, pair1))[0]] * 10000 + \
+                                 vDict["".join(map(str, pair2))[0]] * 100 + \
+                                 vDict["".join(map(str, nonpairCards))[0]]
+
+                # Declare hand
+                self.p_hand_cards = f"{pair1_disp} {pair2_disp} {nonpair_disp}"
+                self.p_hand_desc = f"2 Pair {nDict[pairs[0]]}'s & {nDict[pairs[1]]}'s"
+
+        def is_pair(self):
+            vals = [Card.val for Card in self.availCards]  # Check values of cards in hand + table
+            valcount = set(vals)
+            pairs = [i for i in valcount if vals.count(i) == 2]  # Check if any pairs exist
+
+            if len(pairs) != 1:
+                return False
+
+            else:
+                # sort 7 available cards by rank
+                pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+
+                pair_cards = []
+                pair_disp = []
+                for c in pSort:
+                    if c.val == pairs[0]:
+                        pair_cards.append(c)
+                        pair_disp = " ".join(map(str, pair_cards))
+
+                nonpair_cards = []
+                nonpair_disp = []
+                for c in pSort:
+                    if c.val != pairs[0]:
+                        nonpair_cards.append(c)
+                        nonpair_disp = " ".join(map(str, nonpair_cards[:3]))
+
+                # Score hand
+                self.handscore = 20000000000 + \
+                                 vDict["".join(map(str, pair_cards))[0]] * 1000000 + \
+                                 vDict["".join(map(str, nonpair_cards))[0]] * 10000 + \
+                                 vDict["".join(map(str, nonpair_cards))[2]] * 100 + \
+                                 vDict["".join(map(str, nonpair_cards))[4]]
+
+                # Declare hand
+                self.p_hand_cards = f"{pair_disp} {nonpair_disp}"
+                self.p_hand_desc = f"Pair of {nDict[pairs[0]]}'s"
+
+        def is_highcard(self):
+            vals = [Card.val for Card in self.availCards]
+            valsort = sorted(vals, key=lambda x: vDict[x[0]], reverse=True)
+            pSort = sorted(self.availCards, key=lambda x: vDict[x[0]], reverse=True)
+            highestcards = " ".join(map(str, pSort[:5]))
+
+            # Score hand
+            self.handscore = 10000000000 + \
+                             vDict["".join(map(str, pSort))[0]] * 100000000 + \
+                             vDict["".join(map(str, pSort))[2]] * 1000000 + \
+                             vDict["".join(map(str, pSort))[4]] * 10000 + \
+                             vDict["".join(map(str, pSort))[6]] * 100 + \
+                             vDict["".join(map(str, pSort))[8]]
+
+            # Declare hand
+            self.p_hand_cards = f"{highestcards}"
+            self.p_hand_desc = f"{nDict[highestcards[0]]} High Card"
+
+        if is_highcard(self):
+            is_highcard(self)
+        elif is_pair(self):
+            is_pair(self)
+        elif is_twopair(self):
+            is_twopair(self)
+        elif is_trips(self):
+            is_trips(self)
+        elif is_straight(self):
+            is_straight(self)
+        elif is_flush(self):
+            is_flush(self)
+        elif is_fullhouse(self):
+            is_fullhouse(self)
+        elif is_quads(self):
+            is_quads(self)
+        elif is_straightflush(self):
+            is_straightflush(self)
+        else:
+            return ("Error")
