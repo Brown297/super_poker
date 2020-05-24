@@ -1,0 +1,24 @@
+class Table:
+    def __init__(self, Deck):
+        self.Deck = Deck
+        self.flop = []
+        self.turn = []
+        self.river = []
+        self.cards = []
+
+    def drawFlop(self):
+        self.flop.append(self.Deck.draw())
+        self.flop.append(self.Deck.draw())
+        self.flop.append(self.Deck.draw())
+        self.cards = self.flop
+        print(" ".join(map(str, self.cards)))
+
+    def drawTurn(self):
+        self.turn.append(self.Deck.draw())
+        self.cards = self.flop + self.turn
+        print(" ".join(map(str, self.cards)))
+
+    def drawRiver(self):
+        self.river.append(self.Deck.draw())
+        self.cards = self.flop + self.turn + self.river
+        print(" ".join(map(str, self.cards)))
