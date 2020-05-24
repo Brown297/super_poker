@@ -1,0 +1,173 @@
+import tkinter as tk
+import random
+import math
+import arcade
+import os
+from Card_class import Card
+from Deck_class import Deck, nDict, vDict, sList
+from Player_class import Player
+from Table_class import Table
+
+PLAYER_LIST = []
+COMP_LIST = []
+AI_NAMES = ["Pete", "Brown", "Bob", "Dave", "Dan", "Nesh", "Rally", "Jeffries",
+            "Ben", "Curley", "Pryer", "Mim", "Joey", "Sarah", "Matt", "John",
+            "Mark", "Sam", "Brian", "Mike", "Ray", "Arnold", "Sue", "Max",
+            "Amy", "Luke", "Karen", "Naomi", "Nathan", "Simon", "Natalie"]
+ALL_PLAYERS = []
+
+whole_deck = Deck()  # whole deck for reference
+game_deck = Deck()  # deck to be played with
+game_table = Table(game_deck)
+game_deck.shuffle()
+
+NumPlayers = input("How many people are playing?...")
+NumHumans = input("And how many are humans?...")
+if NumHumans == '':
+    NumHumans = 0
+for i in range(0,int(NumHumans)):
+    name = input("Player's name...")
+    PLAYER_LIST.append(Player(name, game_deck, game_table, "HUMAN"))
+    if AI_NAMES.count(name) == 1:
+        AI_NAMES.remove(name)
+for p in PLAYER_LIST:
+    ALL_PLAYERS.append(p)
+
+for i in range(0,int(NumPlayers)-int(NumHumans)):
+    name = random.choice(AI_NAMES)
+    COMP_LIST.append(Player(name, game_deck, game_table, "AI"))
+    AI_NAMES.remove(name)
+for p in COMP_LIST:
+    ALL_PLAYERS.append(p)
+print()
+
+# deal 'human' players their hand
+for p in PLAYER_LIST:
+    for next_deal in range(1):
+        card_input = input(f"Enter {p.name}'s cards or press [Enter] for random deal...").upper()
+        if not card_input:
+            p.draw_hand()
+            p.show_hand()
+            print()
+        else:
+            card1 = Card(card_input[0], card_input[1])
+            card2 = Card(card_input[2], card_input[3])
+            target_cards = [card1,card2]
+            for tc in target_cards:
+                if tc.val not in vDict or tc.suit not in sList:
+                    print(f"{tc} is not a valid Card")
+                else:
+                    for c in game_deck.cards:
+                        if tc.suit == c.suit and tc.val == c.val:
+                            game_deck.cards.remove(c)
+            p.hand.extend(target_cards)
+            p.availCards.extend(p.hand)
+            p.show_hand()
+            print()
+
+# deal flop
+flop_input = input("Flop...").upper()
+if not flop_input:
+    game_table.drawFlop()
+    print()
+else:
+    card3 = Card(flop_input[0], flop_input[1])
+    card4 = Card(flop_input[2], flop_input[3])
+    card5 = Card(flop_input[4], flop_input[5])
+    target_cards = [card3, card4, card5]
+    for tc in target_cards:
+        if tc.val not in vDict or tc.suit not in sList:
+            print(f"{tc} is not a valid Card")
+        else:
+            for c in game_deck.cards:
+                if tc.suit == c.suit and tc.val == c.val:
+                    game_deck.cards.remove(c)
+    game_table.flop.extend(target_cards)
+    game_table.cards.extend(game_table.flop)
+    print(" ".join(map(str, game_table.cards)))
+    print()
+
+for p in ALL_PLAYERS:
+    p.availCards.extend(game_table.flop)
+
+# deal turn
+turn_input = input("Turn...").upper()
+if not turn_input:
+    game_table.drawTurn()
+    print()
+else:
+    card6 = Card(turn_input[0], turn_input[1])
+    target_cards = [card6]
+    for tc in target_cards:
+        if tc.val not in vDict or tc.suit not in sList:
+            print(f"{tc} is not a valid Card")
+        else:
+            for c in game_deck.cards:
+                if tc.suit == c.suit and tc.val == c.val:
+                    game_deck.cards.remove(c)
+    game_table.turn.extend(target_cards)
+    game_table.cards.extend(game_table.turn)
+    print(" ".join(map(str, game_table.cards)))
+    print()
+
+for p in ALL_PLAYERS:
+    p.availCards.extend(game_table.turn)
+
+# deal river
+river_input = input("River...").upper()
+if not river_input:
+    game_table.drawRiver()
+    print()
+else:
+    card7 = Card(river_input[0], river_input[1])
+    target_cards = [card7]
+    for tc in target_cards:
+        if tc.val not in vDict or tc.suit not in sList:
+            print(f"{tc} is not a valid Card")
+        else:
+            for c in game_deck.cards:
+                if tc.suit == c.suit and tc.val == c.val:
+                    game_deck.cards.remove(c)
+    game_table.river.extend(target_cards)
+    game_table.cards.extend(game_table.river)
+    print(" ".join(map(str, game_table.cards)))
+    print()
+
+for p in ALL_PLAYERS:
+    p.availCards.extend(game_table.river)
+
+input("See cards...")
+
+# Deal AI players their cards
+for p in COMP_LIST:
+    p.draw_hand()
+
+# Determine winner
+for p in ALL_PLAYERS:
+    p.hand_analyser()
+hand_scores = {}
+for p in ALL_PLAYERS:
+    x = {p.name:p.handscore}
+    hand_scores.update(x)
+winning_handscore = max(hand_scores.values())
+winner = [k for k,v in hand_scores.items() if v == winning_handscore]
+
+# show game table
+print()
+line_sep = ("-" * 14 +  # name length
+            "-" * 16 +  # best cards
+            "-" * 36)  # hand desc
+print(line_sep)
+print("    Player          Hand                  Description             ")
+print(line_sep)
+
+for p in ALL_PLAYERS:
+    print(f"{p.name:^14}{p.p_hand_cards:^16}{p.p_hand_desc:^36}")
+
+print(line_sep)
+
+if len(winner) == 1:
+    win_line = f"{winner[0]} Wins!"
+else:
+    win_line = f"Split pot - {', '.join(winner)}"
+print(f"{win_line:^64}")
